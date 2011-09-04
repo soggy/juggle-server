@@ -15,7 +15,7 @@ matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
 
 class AccelViewer:
-    def __init__(self, filename, samples):
+    def __init__(self, filename, samples, onlymagnitude):
         self.logger = logger.LoggerSender(filename)
         self.samples = samples
         self.linedata = {"x": np.ndarray(samples),
@@ -30,9 +30,12 @@ class AccelViewer:
             self.magdata[i] = 0.0
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
-        self.lines = {"x": self.ax.plot(self.linedata["x"])[0],
-                      "y": self.ax.plot(self.linedata["y"])[0],
-                      "z": self.ax.plot(self.linedata["z"])[0]}
+        self.onlymagnitude = onlymagnitude
+        self.lines = dict()
+        if not self.onlymagnitude:
+            self.lines["x"] = self.ax.plot(self.linedata["x"])[0]
+            self.lines["y"] = self.ax.plot(self.linedata["y"])[0]
+            self.lines["z"] = self.ax.plot(self.linedata["z"])[0]
         self.magline, = self.ax.plot(self.magdata)
         self.ax.set_ylim(-20, 20)
 
@@ -62,8 +65,9 @@ class AccelViewer:
         A = transform.phone2world(accel, orient)
         print "worldcoords: ", A
         self.shiftandappend(e)
-        for key in self.linedata.keys():
-            self.lines[key].set_ydata(self.linedata[key])
+        if not self.onlymagnitude:
+            for key in self.linedata.keys():
+                self.lines[key].set_ydata(self.linedata[key])
         self.magline.set_ydata(self.magdata)
         self.fig.canvas.draw()
         return True
@@ -72,6 +76,6 @@ log_file = None
 if len(sys.argv) >= 2:
     log_file = sys.argv[1]
 
-view = AccelViewer(log_file, 200)
+view = AccelViewer(log_file, 200, True)
 gobject.idle_add(view.update)
 plt.show()

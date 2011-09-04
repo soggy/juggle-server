@@ -13,8 +13,12 @@ class Echo(DatagramProtocol):
         #self.phones[server] = Phone(server)
         
         self.logger = None;
-        if log_file:        
+        if log_file:
+            self.verbose = True
             self.logger = logger.Logger(log_file);
+        else:
+            self.verbose = False
+            self.logger = logger.Logger(None)
 
     def datagramReceived(self, data, (host, port)):
         #print "received %r from %s:%d" % (data, host, port)
@@ -22,7 +26,8 @@ class Echo(DatagramProtocol):
             self.logger.write(data);
             
         event_data = simplejson.loads(data)
-        print event_data, "from ", host, port
+        if self.verbose:
+            print event_data, "from ", host, port
         #if event_data["type"] == "sensor_data":
         #    print event_data["data"]["x"], event_data["data"]["y"], event_data["data"]["z"]
 
