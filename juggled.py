@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 
 import simplejson
 
-import gobject
+import sys
+
 import numpy as np
 import matplotlib
 matplotlib.use('GTKAgg')
 
 import matplotlib.pyplot as plt
+
+import logger
 
 class Phone:
     def __init__(self, server):
@@ -29,19 +32,31 @@ class Phone:
         self.line.set_ydata(self.data[0])
         self.fig.canvas.draw_idle()
 
+
 class Echo(DatagramProtocol):
-    def __init__(self):
+    def __init__(self, log_file):
         self.phones = dict()
         #server = "192.168.1.1"
         #self.phones[server] = Phone(server)
-        gobject.timeout_add(100, self.update)
+        
+        self.logger = None;
+        if log_file:        
+            self.logger = logger.Logger(log_file);
+
+        self.loopingCall = task.LoopingCall(self.update)
+        self.loopingCall.start(1, False)
 
     def datagramReceived(self, data, (host, port)):
         print "received %r from %s:%d" % (data, host, port)
-        if host not in self.phones:
+
+        if host not in self.phones.keys():
             self.phones[host] = Phone(host)
         phone = self.phones[host]
-        event_data = simplejson.loads(data);
+
+        if self.logger:
+            self.logger.write(data);
+            
+        event_data = simplejson.loads(data);		
         if event_data["type"] == "sensor_data":
             print event_data["data"]["x"], event_data["data"]["y"], event_data["data"]["z"]
             phone.adddata(event_data)
@@ -52,7 +67,11 @@ class Echo(DatagramProtocol):
             phone.update()
         return True # False terminates updates
 
-reactor.listenUDP(12345, Echo())
+log_file = None;
+if len(sys.argv) >= 2:
+    log_file = sys.argv[1];
+
+reactor.listenUDP(12345, Echo(log_file))
 plt.show()
 reactor.run()
 
