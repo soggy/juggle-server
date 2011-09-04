@@ -9,8 +9,7 @@ class Logger:
    def write(self, event):
        log_event = {"time": time.time() - self.start_time, "event": event}
        self.log_file.write("%s\n" % simplejson.dumps(log_event));
-	   
-       
+
 class LoggerSender:
     def __init__(self, file_name):
         self.log_file = open(file_name, "rb");
