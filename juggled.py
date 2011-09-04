@@ -3,7 +3,6 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, task
 import simplejson
 import sys
-import numpy as np
 
 import logger
 
@@ -19,14 +18,13 @@ class Echo(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         #print "received %r from %s:%d" % (data, host, port)
-
         if self.logger:
             self.logger.write(data);
             
         event_data = simplejson.loads(data)
-        print event_data
-        if event_data["type"] == "sensor_data":
-            print event_data["data"]["x"], event_data["data"]["y"], event_data["data"]["z"]
+        print event_data, "from ", host, port
+        #if event_data["type"] == "sensor_data":
+        #    print event_data["data"]["x"], event_data["data"]["y"], event_data["data"]["z"]
 
 log_file = None;
 if len(sys.argv) >= 2:
