@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
 import sys, time, math
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 import logger, transform
 
 import gobject
