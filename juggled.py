@@ -19,11 +19,17 @@ class Phone:
         self.server = server
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
-        self.line, = self.ax.plot(np.random.rand(10))
+        #self.line, = self.ax.plot(np.random.rand(10))
+        self.data = (np.ndarray(100), np.ndarray(100), np.ndarray(100))
+        self.line, = self.ax.plot(self.data[0])
         self.ax.set_ylim(0, 1)
 
+    def adddata(self, d):
+        self.data[0][:-1] = self.data[0][1:]
+        self.data[0][-1] = d["data"]["x"]
+        
     def update(self):
-        self.line.set_ydata(np.random.rand(10))
+        self.line.set_ydata(self.data[0])
         self.fig.canvas.draw_idle()
 
 
@@ -42,13 +48,19 @@ class Echo(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         print "received %r from %s:%d" % (data, host, port)
+
+        if host not in self.phones.keys():
+            self.phones[host] = Phone(host)
+        phone = self.phones[host]
+
         if self.logger:
             self.logger.write(data);
             
         event_data = simplejson.loads(data);		
         if event_data["type"] == "sensor_data":
             print event_data["data"]["x"], event_data["data"]["y"], event_data["data"]["z"]
-        self.transport.write(data, (host, port))
+            phone.adddata(event_data)
+        #self.transport.write(data, (host, port))
 
     def update(self):
         for phone in self.phones.values():
