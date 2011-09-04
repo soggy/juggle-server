@@ -1,5 +1,8 @@
 import time
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 
 class Logger:
    def __init__(self, file_name):
