@@ -37,11 +37,12 @@ class LoggerSender:
         cur_time = float(event["time"])
         if not self.last_time:
             self.last_time = cur_time
+        delta_t = cur_time - self.last_time
         if self.dosleeps:
-            time.sleep(cur_time - self.last_time)
+            time.sleep(delta_t)
         # print event["time"], event["event"]
         self.last_time = cur_time
-        return event["event"]
+        return event["event"], delta_t
 
     def send_log(self, transport):
         while True:
