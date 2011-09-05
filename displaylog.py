@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, time, math
+import os, sys, time, math
 try:
     import simplejson
 except ImportError:
@@ -14,6 +14,11 @@ import matplotlib
 matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
 
+def beep():
+    f=open('/dev/tty','w')
+    f.write(chr(7))
+    f.close() 
+
 class AccelViewer:
     def __init__(self, filename, samples, onlymagnitude):
         self.logger = logger.LoggerSender(filename)
@@ -26,8 +31,10 @@ class AccelViewer:
             for i in xrange(0, len(self.linedata[key])):
                 self.linedata[key][i] = 0.0
         self.magdata = np.ndarray(samples)
+        self.deltatimes = np.ndarray(samples)
         for i in xrange(0, len(self.magdata)):
             self.magdata[i] = 0.0
+            self.deltatimes[i] = 0.0
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
         self.onlymagnitude = onlymagnitude
@@ -37,9 +44,9 @@ class AccelViewer:
             self.lines["y"] = self.ax.plot(self.linedata["y"])[0]
             self.lines["z"] = self.ax.plot(self.linedata["z"])[0]
         self.magline, = self.ax.plot(self.magdata)
-        self.ax.set_ylim(-20, 20)
+        self.ax.set_ylim(0, 35)
 
-    def shiftandappend(self, event):
+    def shiftandappend(self, deltatime, event):
         # Apparently slices don't work.  WTF?
         # ld[:-1] = linedata[1:]
         # ld[-1] = np.float64(e["data"]["x"])
@@ -53,18 +60,51 @@ class AccelViewer:
             newmag += v*v
             self.linedata[key] = nd
         nd = np.ndarray(self.samples)
+        ndd = np.ndarray(self.samples)
         for i in xrange(0, self.samples-1):
             nd[i] = self.magdata[i+1]
-        nd[-1] = math.sqrt(newmag) - 9.8
+            ndd[i] = self.deltatimes[i+1]
+        # nd[-1] = math.sqrt(newmag) - 9.8
+        nd[-1] = math.sqrt(newmag)
+        ndd[-1] = deltatime
         self.magdata = nd
+        self.deltatimes = ndd
+
+    def inflection(self, n):
+        L = len(self.magdata)
+        A = 0.0
+        B = 0.0
+        for i in xrange(L-1, L-n-1, -1):
+            #print i, self.magdata[i], self.magdata[i-1], self.deltatimes[i]
+            B += ((self.magdata[i] - self.magdata[i-1]) / self.deltatimes[i])
+        B /= float(n)
+        for i in xrange(L-n-1, L-(2*n)-1, -1):
+            #print i, self.magdata[i], self.magdata[i-1], self.deltatimes[i]
+            A += ((self.magdata[i] - self.magdata[i-1]) / self.deltatimes[i])
+        A /= float(n)
+        #print "inflection test: ", A, B
+        if (math.fabs(A - B) < 50):
+            return
+        if (A > 0 and B < 0):
+            print "TURNED DOWN", A, B
+            beep()
+            #os.system('echo -e "\007"')
+            #os.system("mplayer /usr/share/sounds/KDE-Im-Message-In.ogg &")
+        if (A < 0 and B > 0):
+            print "TURNED UP", A, B
+            beep()
+            #os.system('echo -e "\007"')
 
     def update(self):
-        e = simplejson.loads(self.logger.nextevent())
+        (e, dt) = self.logger.nextevent()
+        e = simplejson.loads(e)
+        #print "deltat", dt
         accel = (e["data"]["x"], e["data"]["y"], e["data"]["z"])
         orient = (e["data"]["azimuth"], e["data"]["pitch"], e["data"]["roll"])
-        A = transform.phone2world(accel, orient)
-        print "worldcoords: ", A
-        self.shiftandappend(e)
+        #A = transform.phone2world(accel, orient)
+        #print "worldcoords: ", A
+        self.shiftandappend(dt, e)
+        self.inflection(2)
         if not self.onlymagnitude:
             for key in self.linedata.keys():
                 self.lines[key].set_ydata(self.linedata[key])
