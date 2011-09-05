@@ -21,21 +21,34 @@ logger.dosleeps = False
 fig = plt.figure()
 ax = Axes3D(fig)
 
-xs = []
-ys = []
-zs = []
-while 1:
+slice = 0.01
+
+X=0
+Y=1
+Z=2
+
+position     = [0, 0, 0]
+acceleration = [0, 0, 0]
+velocity     = [0, 0, 0]
+key          = ['x', 'y', 'z']
+
+points = [[], [], []]
+while True:
     try:
-        e = simplejson.loads(logger.nextevent())
+        ev, dt = logger.nextevent()
     except:
         break
 
-    xs.append(e['data']['x'])
-    ys.append(e['data']['y'])
-    zs.append(e['data']['z'])
+    t = 0
+    while t < dt:
+        for axis in X, Y, Z:
+            points[axis].append(position[axis] + velocity[axis] * slice)
+            velocity[axis] += acceleration[axis] * slice
+        t += slice
 
-    # ax.plot(xs, ys, zs)
-    # plt.draw()
+    e = simplejson.loads(ev)
+    for axis in X, Y, Z:
+        acceleration[axis] = e['data'][key[axis]]
 
-ax.plot(xs, ys, zs)
+ax.plot(points[X], points[Y], points[Z])
 plt.show()
