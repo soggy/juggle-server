@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, task, protocol
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 import sys
 
 import logger
