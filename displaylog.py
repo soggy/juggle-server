@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os, sys, time, math
 try:
@@ -7,11 +7,8 @@ except ImportError:
     import json as simplejson
 import logger, transform
 
-import gobject
 import numpy as np
-import gtk
 import matplotlib
-matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
 
 def beep():
@@ -22,6 +19,7 @@ def beep():
 class AccelViewer:
     def __init__(self, filename, samples, onlymagnitude):
         self.logger = logger.LoggerSender(filename)
+        # self.logger.dosleeps = False
         self.samples = samples
         self.linedata = {"x": np.ndarray(samples),
                          "y": np.ndarray(samples),
@@ -117,5 +115,6 @@ if len(sys.argv) >= 2:
     log_file = sys.argv[1]
 
 view = AccelViewer(log_file, 200, True)
-gobject.idle_add(view.update)
+while True:
+    view.update()
 plt.show()
