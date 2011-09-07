@@ -32,7 +32,9 @@ acceleration = [0, 0, 0]
 velocity     = [0, 0, 0]
 key          = ['x', 'y', 'z']
 
-points = [[], [], []]
+n_points = 100
+points   = [[0 for _ in range(0, n_points)], [0 for _ in range(0, n_points)], [0 for _ in range(0, n_points)]]
+
 while True:
     try:
         ev, dt = logger.nextevent()
@@ -50,5 +52,5 @@ while True:
     for axis in X, Y, Z:
         acceleration[axis] = e['data'][key[axis]]
 
-ax.plot(points[X], points[Y], points[Z])
-plt.show()
+    ax.plot(points[X][-1 * n_points:], points[Y][-1 * n_points:], points[Z][-1 * n_points:], 'r--')
+    plt.draw()
